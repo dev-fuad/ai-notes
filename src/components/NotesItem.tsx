@@ -11,11 +11,14 @@ type NotesItemProp = {
   onLongPress?: (id: string) => void;
 };
 
-export default function NotesItem({ note, onPress }: NotesItemProp) {
+export default function NotesItem({ note, onPress, onLongPress }: NotesItemProp) {
   return (
-    <Pressable style={styles.card} onPress={() => onPress(note.id)}>
+    <Pressable
+      style={styles.card}
+      onPress={() => onPress(note.id)}
+      onLongPress={() => onLongPress?.(note.id)}>
       {/* title */}
-      <Text style={styles.cardTitle}>Note {note.title}</Text>
+      <Text style={styles.cardTitle}>{note.title}</Text>
 
       {/* Images */}
       {note.imageUris.length > 0 && (

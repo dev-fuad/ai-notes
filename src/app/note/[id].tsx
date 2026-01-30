@@ -1,11 +1,13 @@
+import { File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Pressable from "@/components/ui/pressable";
 import { dimensions } from "@/constants/dimensions";
 import { colors } from "@/constants/theme";
+import { notesService } from "@/services/notesService";
 
 export default function Note() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -14,11 +16,48 @@ export default function Note() {
   const [content, setContent] = useState("");
   const [imageUris, setImageUris] = useState<string[]>([]);
 
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          const note = await notesService.getNote(id);
+          setTitle(note.title);
+          setContent(note.content);
+          setImageUris(note.imageUris);
+        } catch (error) {
+          console.error("Failed to get note: ", error);
+        }
+      })();
+    }, [id],
+    )
+  );
+
+  const handleSaveButtonPress = async () => {
+    try {
+      await notesService.updateNote(id, { title, content, imageUris });
+    } catch (error) {
+      console.error("Failed to save note: ", error);
+    }
+  };
+
+  const handleAddImages = () => {
+    try {
+      const file = new File(Paths.cache, "example.txt");
+      file.create();
+      file.write("Helloe");
+
+      const destUri = notesService.addImageToNote("a-1", file.uri);
+      console.log("Image: ", destUri);
+    } catch (error) {
+      console.error("Image error: ", error);
+    }
+  };
+
   return (
     <>
       <Stack.Screen options={{
         headerRight: () => (
-          <Pressable>
+          <Pressable onPress={handleSaveButtonPress}>
             <Text style={styles.saveButton}>Save</Text>
           </Pressable>
         )
@@ -45,7 +84,7 @@ export default function Note() {
                 <Image source={{ uri }} style={styles.imageThumb} />
               </Pressable>
             ))}
-            <Pressable key="add-image" style={[styles.imageThumb, styles.addImageButton]}>
+            <Pressable key="add-image" style={[styles.imageThumb, styles.addImageButton]} onPress={handleAddImages}>
               <Text style={styles.addIcon}>＋</Text>
             </Pressable>
           </ScrollView>
