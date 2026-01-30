@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet } from "react-native";
-import { Note } from "../types/note";
-import Pressable from "./ui/pressable";
-import { dimensions } from "../constants/dimensions";
-import { colors } from "../constants/theme";
 import { Image } from "expo-image";
+import { View, Text, StyleSheet } from "react-native";
+import { dimensions } from "@/constants/dimensions";
+import { colors } from "@/constants/theme";
+import { Note } from "@/types/note";
+import Pressable from "./ui/pressable";
 
 type NotesItemProp = {
   note: Note;

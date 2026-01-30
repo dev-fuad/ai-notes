@@ -1,11 +1,11 @@
-import { FlatList, View, StyleSheet } from "react-native";
-import NotesItem from "../components/NotesItem";
-import { useState } from "react";
-import { colors } from "../constants/theme";
-import { Note } from "../types/note";
-import FAB from "../components/fab";
-import { dimensions } from "../constants/dimensions";
 import { useRouter } from "expo-router";
+import { useState } from "react";
+import { FlatList, View, StyleSheet } from "react-native";
+import FAB from "@/components/fab";
+import NotesItem from "@/components/NotesItem";
+import { dimensions } from "@/constants/dimensions";
+import { colors } from "@/constants/theme";
+import { Note } from "@/types/note";
 
 const DummyNote: Note = {
   id: 'a-1',
@@ -48,4 +48,3 @@ const styles = StyleSheet.create({
     height: dimensions.s,
   },
 });
-

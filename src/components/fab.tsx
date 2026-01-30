@@ -1,7 +1,7 @@
 import { StyleSheet, Text } from "react-native";
 import Pressable, { PressableProps } from "./ui/pressable";
-import { dimensions } from "../constants/dimensions";
-import { colors } from "../constants/theme";
+import { dimensions } from "@/constants/dimensions";
+import { colors } from "@/constants/theme";
 import React from "react";
 
 export type FABProps = PressableProps & {

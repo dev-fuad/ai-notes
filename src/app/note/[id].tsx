@@ -1,11 +1,11 @@
+import { Image } from "expo-image";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import Pressable from "@/src/components/ui/pressable";
-import { dimensions } from "@/src/constants/dimensions";
-import { colors } from "@/src/constants/theme";
-import { Image } from "expo-image";
+import Pressable from "@/components/ui/pressable";
+import { dimensions } from "@/constants/dimensions";
+import { colors } from "@/constants/theme";
 
 export default function Note() {
   const { id } = useLocalSearchParams<{ id: string }>();
