@@ -1,8 +1,9 @@
 import { File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Pressable from "@/components/ui/pressable";
 import { dimensions } from "@/constants/dimensions";
@@ -40,17 +41,47 @@ export default function Note() {
     }
   };
 
-  const handleAddImages = () => {
-    try {
-      const file = new File(Paths.cache, "example.txt");
-      file.create();
-      file.write("Helloe");
-
-      const destUri = notesService.addImageToNote("a-1", file.uri);
-      console.log("Image: ", destUri);
-    } catch (error) {
-      console.error("Image error: ", error);
+  const handleAddImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission required',
+        'Photo library permission is needed to pick images.',
+      );
+      return;
     }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      selectionLimit: 1,
+      quality: 1,
+    });
+    if (result.canceled) return;
+
+    try {
+      const destUri = await notesService.addImageToNote(id, result.assets[0].uri);
+      const newImageUris = [...imageUris, destUri];
+      setImageUris(newImageUris);
+    } catch (e) {
+      console.error('Failed to add image to note', e);
+    }
+  };
+
+  const handleRemoveImage = (uri: string) => {
+    Alert.alert(
+      "Remove image?",
+      "This will remove the image from this note.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            const filteredImageUris = imageUris.filter(u => u !== uri);
+            setImageUris(filteredImageUris);
+          }
+        },
+      ]
+    );
   };
 
   return (
@@ -78,9 +109,12 @@ export default function Note() {
 
         {/* Images */}
         <View>
-          <ScrollView horizontal>
+          <ScrollView
+            horizontal
+            contentContainerStyle={styles.imageScrollContainerContent}
+            showsHorizontalScrollIndicator={false}>
             {imageUris.map((uri) => (
-              <Pressable key={uri}>
+              <Pressable key={uri} onLongPress={() => handleRemoveImage(uri)}>
                 <Image source={{ uri }} style={styles.imageThumb} />
               </Pressable>
             ))}
@@ -119,6 +153,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: colors.textPrimary,
+  },
+  imageScrollContainerContent: {
+    gap: dimensions.m,
   },
   imageThumb: {
     height: 80,
