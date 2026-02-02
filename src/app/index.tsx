@@ -1,6 +1,22 @@
+import { useEffect, useState } from "react";
 import Notes from "@/modules/notes";
+import { loadVectorStore } from "@/services/vectorStores/textVectorStore";
+import { ActivityIndicator } from "react-native";
 
 export default function App() {
-  return <Notes />;
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await loadVectorStore();
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading vector store: ", error);
+      }
+    })();
+  }, [])
+
+  return loading ? <ActivityIndicator /> : <Notes />;
 }
 

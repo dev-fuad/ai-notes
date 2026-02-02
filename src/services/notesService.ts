@@ -7,6 +7,7 @@ import {
   getNotes as storageGetNotes,
   updateNote as storageUpdateNote,
 } from "@/services/storage/notes";
+import { addNoteToVectorStore, deleteNoteFromVectorStore, queryVectorStore } from "./vectorStores/textVectorStore";
 
 async function addImageToNote(noteId: string, sourceUri: string): Promise<string> {
   const destDir = new Directory(Paths.document, `notes/${noteId}/images`);
@@ -28,23 +29,32 @@ async function getNote(noteId: string): Promise<Note> {
 
 async function createNote(title: string, content: string, imageUris: string[]): Promise<Note> {
   const note = await storageCreateNote({ title, content, imageUris });
+  addNoteToVectorStore(note);
   return note;
 }
 
 async function updateNote(noteId: string, data: { title: string; content: string; imageUris: string[] }): Promise<void> {
   await storageUpdateNote(noteId, data);
+  await deleteNoteFromVectorStore(noteId);
+  await addNoteToVectorStore({ id: noteId, ...data } as Note);
 }
 
 async function deleteNote(noteId: string): Promise<void> {
+  // Delete the associated images directory if it exists
   const noteDir = new Directory(Paths.document, `notes/${noteId}`);
   if (noteDir.exists) {
     noteDir.delete();
   }
+
+  // Delete the note from async Storage
   await storageDeleteNote(noteId);
+
+  // Delete the note from vectorStores
+  await deleteNoteFromVectorStore(noteId);
 }
 
 async function searchByText(query: string, notes: Note[], n: number = 3): Promise<Note[]> {
-  const results: { similarity: number }[] = [];
+  const results = await queryVectorStore(query);
   return buildSimilarityResults(results, notes).slice(0, n);
 }
 
@@ -67,10 +77,11 @@ function buildSimilarityResults(results: { similarity: number; metadata?: { note
       noteIdToMaxSimilarity.set(noteId, Math.max(current, r.similarity));
     }
   }
+
   return notes
     .filter(n => noteIdToMaxSimilarity.has(n.id))
     .map(n => ({ ...n, similarity: noteIdToMaxSimilarity.get(n.id)! }))
-    .sort((a, b) => b.similarity - a.similarity)
+    .sort((a, b) => b.similarity - a.similarity);
 }
 
 export const notesService = {
