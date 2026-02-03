@@ -58,7 +58,8 @@ export default function Notes() {
     }
 
     try {
-      const textResults = await notesService.searchByText(trimmedQuery, notes);
+      // const textResults = await notesService.searchByText(trimmedQuery, notes);
+      const textResults = await notesService.searchImagesByText(trimmedQuery, notes);
       setTextSearchNotes(textResults);
     } catch (e) {
       console.error('Failed to search by text', e);

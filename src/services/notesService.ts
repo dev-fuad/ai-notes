@@ -8,6 +8,7 @@ import {
   updateNote as storageUpdateNote,
 } from "@/services/storage/notes";
 import { addNoteToVectorStore, deleteNoteFromVectorStore, queryVectorStore } from "./vectorStores/textVectorStore";
+import { addImagesToVectorStore, deleteImagesFromVectorStore, queryImageVectorStore } from "./vectorStores/imageVectorStore";
 
 async function addImageToNote(noteId: string, sourceUri: string): Promise<string> {
   const destDir = new Directory(Paths.document, `notes/${noteId}/images`);
@@ -28,15 +29,28 @@ async function getNote(noteId: string): Promise<Note> {
 }
 
 async function createNote(title: string, content: string, imageUris: string[]): Promise<Note> {
+  // add note to AsyncStorage
   const note = await storageCreateNote({ title, content, imageUris });
+  // add the texts to text vector store
   addNoteToVectorStore(note);
+  // add the images to image vector store
+  addImagesToVectorStore(imageUris, note.id);
   return note;
 }
 
 async function updateNote(noteId: string, data: { title: string; content: string; imageUris: string[] }): Promise<void> {
+  // update the AsyncStorage with with updated note
   await storageUpdateNote(noteId, data);
+
+  // delete the existing texts from text vector store
   await deleteNoteFromVectorStore(noteId);
+  // delete the existing images from image vector store
+  await deleteImagesFromVectorStore(noteId);
+
+  // add new/updated texts to text vector store
   await addNoteToVectorStore({ id: noteId, ...data } as Note);
+  // add new/updated images to image vector store
+  await addImagesToVectorStore(data.imageUris, noteId);
 }
 
 async function deleteNote(noteId: string): Promise<void> {
@@ -49,8 +63,10 @@ async function deleteNote(noteId: string): Promise<void> {
   // Delete the note from async Storage
   await storageDeleteNote(noteId);
 
-  // Delete the note from vectorStores
+  // Delete the texts from vectorStores
   await deleteNoteFromVectorStore(noteId);
+  // Delete the images from vectorStores
+  await deleteImagesFromVectorStore(noteId);
 }
 
 async function searchByText(query: string, notes: Note[], n: number = 3): Promise<Note[]> {
@@ -58,13 +74,13 @@ async function searchByText(query: string, notes: Note[], n: number = 3): Promis
   return buildSimilarityResults(results, notes).slice(0, n);
 }
 
-async function searchByImageUri(imageUri: string, notes: Note[], n: number = 3): Promise<Note[]> {
-  const results: { similarity: number }[] = [];
+async function searchByImageUri(image: string, notes: Note[], n: number = 3): Promise<Note[]> {
+  const results: { similarity: number }[] = await queryImageVectorStore({ image });
   return buildSimilarityResults(results, notes).slice(0, n);
 }
 
 async function searchImagesByText(query: string, notes: Note[], n: number = 3): Promise<Note[]> {
-  const results: { similarity: number }[] = [];
+  const results: { similarity: number }[] = await queryImageVectorStore({ query });
   return buildSimilarityResults(results, notes).slice(0, n);
 }
 
